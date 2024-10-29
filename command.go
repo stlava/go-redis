@@ -1550,12 +1550,14 @@ func clusterSlotsParser(rd *proto.Reader, n int64) (interface{}, error) {
 		}
 
 		nodes := make([]ClusterNode, n-2)
+		var nn int64
 		for j := 0; j < len(nodes); j++ {
-			n, err := rd.ReadArrayLen()
+			nn, err = rd.ReadArrayLen()
 			if err != nil {
 				return nil, err
 			}
-			if n < 2 || n > 4 {
+
+			if nn < 2 || nn > 4 {
 				err := fmt.Errorf("got %d elements in cluster info address, expected 2, 3, 4", n)
 				return nil, err
 			}
@@ -1572,12 +1574,35 @@ func clusterSlotsParser(rd *proto.Reader, n int64) (interface{}, error) {
 
 			nodes[j].Addr = net.JoinHostPort(ip, port)
 
-			if n == 3 {
+			if nn >= 3 {
 				id, err := rd.ReadString()
 				if err != nil {
 					return nil, err
 				}
 				nodes[j].Id = id
+			}
+
+			if nn >= 4 {
+				networkingMetadata := make(map[string]string)
+				metadataLength, err := rd.ReadArrayLen()
+				if err != nil {
+					return nil, err
+				}
+				if metadataLength%2 != 0 {
+					return nil, fmt.Errorf(
+						"got %d elements in metadata, expected an even number", metadataLength)
+				}
+				for ii := int64(0); ii < metadataLength; ii += 2 {
+					key, err := rd.ReadString()
+					if err != nil {
+						return nil, err
+					}
+					value, err := rd.ReadString()
+					if err != nil {
+						return nil, err
+					}
+					networkingMetadata[key] = value
+				}
 			}
 		}
 
