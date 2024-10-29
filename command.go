@@ -1555,8 +1555,8 @@ func clusterSlotsParser(rd *proto.Reader, n int64) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			if n != 2 && n != 3 {
-				err := fmt.Errorf("got %d elements in cluster info address, expected 2 or 3", n)
+			if n < 2 || n > 4 {
+				err := fmt.Errorf("got %d elements in cluster info address, expected 2, 3, 4", n)
 				return nil, err
 			}
 
